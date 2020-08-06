@@ -15,6 +15,8 @@ import glob
 import matplotlib.pyplot as plt
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+from tensorflow.keras.models import load_model
+
 
 def replaceDirTree(dir):
     if os.path.exists(dir):
@@ -136,3 +138,45 @@ def plotConfusionMatrix(cm, classes,
     plt.xlabel('Predicted label')
     if show:
         plt.show()
+
+def trainAndSaveModel(
+    model, 
+    saveAs,
+    x,
+    steps_per_epoch,
+    validation_data,
+    validation_steps,
+    optimizer=Adam(learning_rate=0.0001), 
+    loss='categorical_crossentropy', 
+    metrics=['accuracy'],
+    epochs=10,
+    verbose=2,
+    overwrite=False):
+
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+
+    # Train model
+    model.fit(x=x,
+        steps_per_epoch=steps_per_epoch,
+        validation_data=validation_data,
+        validation_steps=validation_steps,
+        epochs=epochs,
+        verbose=verbose
+    )
+
+    # Save model in full
+    saveModelFull(model, saveAs, overwrite=True)
+
+def loadMakePredictionsAndPlotCM(modelDir, x, steps, y_true, classLabels, verbose=1, showCM=False):
+    # Load a full model
+    model = load_model(modelDir)
+
+    # Make predictions
+    predictions = model.predict(x=x, steps=steps, verbose=1)
+
+    # Plot a confusion matrix
+    cm = confusion_matrix(y_true=y_true, y_pred=np.argmax(predictions, axis=-1))
+    x.class_indices
+    cm_plot_labels = classLabels
+    plotConfusionMatrix(cm=cm, classes=cm_plot_labels, title='Confusion Matrix', show=showCM)
+

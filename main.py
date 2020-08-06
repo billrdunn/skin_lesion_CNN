@@ -7,6 +7,9 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import categorical_crossentropy
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import confusion_matrix
+from keras.models import Model
+from keras.applications import imagenet_utils
+from keras.preprocessing import image
 import itertools
 import os
 import shutil
@@ -21,6 +24,8 @@ num_train = 110
 num_valid = 11
 num_test = 11
 num_classes = 7
+classes = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
+
 
 # ---------------------------------------------------------
 # UNCOMMENT THIS BLOCK TO REPLACE ALL IMAGES
@@ -31,30 +36,6 @@ num_classes = 7
 # os.chdir('../../')
 # ----------------------------------------------------------
 
-train_path = 'data/skin_lesion_images/train'
-valid_path = 'data/skin_lesion_images/valid'
-test_path = 'data/skin_lesion_images/test'
-
-# Creates batches of data 
-classes = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
-batch_size = 10
-target_size = (450, 600) # resize pixel size of images to this. (600,450) is the normal size
-# TODO or is the right size (450, 600) ??
-input_shape = (450, 600, 3)
-
-# TODO This uses VGG16 preprocessing but maybe this isn't good...
-train_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
-    .flow_from_directory(directory=train_path, target_size=target_size, classes=classes, batch_size=batch_size)
-valid_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
-    .flow_from_directory(directory=valid_path, target_size=target_size, classes=classes, batch_size=batch_size)
-test_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
-    .flow_from_directory(directory=test_path, target_size=target_size, classes=classes, batch_size=batch_size, shuffle=False)
-
-# Do some nice assertions
-assert train_batches.n == num_train * num_classes
-assert valid_batches.n == num_valid * num_classes
-assert test_batches.n == num_test * num_classes
-assert train_batches.num_classes == valid_batches.num_classes == test_batches.num_classes == num_classes
 
 # # Generate a batch of images and labels from the training set
 # imgs, labels = next(train_batches)
@@ -73,7 +54,31 @@ assert train_batches.num_classes == valid_batches.num_classes == test_batches.nu
 # # Print matrix of labels
 # print(labels)
 
+# ----- VGG16 MODEL -------
+
 if False: # Change this to retrain CNN
+    train_path = 'data/skin_lesion_images/train'
+    valid_path = 'data/skin_lesion_images/valid'
+    test_path = 'data/skin_lesion_images/test'
+
+    batch_size = 10
+    target_size = (600, 450) # resize pixel size of images to this. (600,450) is the normal size
+    input_shape = (target_size[0], target_size[1], 3)
+
+    # Creates batches of data 
+    train_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
+        .flow_from_directory(directory=train_path, target_size=target_size, classes=classes, batch_size=batch_size)
+    valid_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
+        .flow_from_directory(directory=valid_path, target_size=target_size, classes=classes, batch_size=batch_size)
+    test_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.vgg16.preprocess_input) \
+        .flow_from_directory(directory=test_path, target_size=target_size, classes=classes, batch_size=batch_size, shuffle=False)
+
+    # Do some nice assertions
+    assert train_batches.n == num_train * num_classes
+    assert valid_batches.n == num_valid * num_classes
+    assert test_batches.n == num_test * num_classes
+    assert train_batches.num_classes == valid_batches.num_classes == test_batches.num_classes == num_classes
+
     # Create the CNN
     # padding = same means dimensionality isn't reduced after convolution
     # MaxPool2D strides = 2 cuts dimensions in half
@@ -86,31 +91,111 @@ if False: # Change this to retrain CNN
         Dense(units=num_classes, activation='softmax')
     ])
 
-    model.summary()
-
-    model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=['accuracy'])
-
-    # Train model
-    model.fit(x=train_batches,
+    utils.trainAndSaveModel(model,
+        'first_CNN', 
+        x=train_batches,
         steps_per_epoch=len(train_batches),
         validation_data=valid_batches,
-        validation_steps=len(valid_batches),
-        epochs=10,
-        verbose=2
+        validation_steps=len(valid_batches), 
+        overwrite=True)
+
+if False:
+    utils.loadMakePredictionsAndPlotCM('models/first_CNN.h5', 
+        x=test_batches, 
+        steps=len(test_batches),
+        y_true=test_batches.classes,
+        classLabels=classes,
+        showCM=True
+        )
+
+# Fine-tune the VGG16 model
+# VGG16 won ImageNet competition in 2014
+# From the VGG16 paper, the only preprocessing that is done is subtracting
+# the mean RGB pixel value from each pixel
+# unfortunately the images have to be resized to (224,224,3) for pretraining with VGG16
+
+if False:
+    # import VGG16 model
+    vgg16_model = tf.keras.applications.VGG16(
+        include_top=True, weights='imagenet', input_tensor=None, input_shape=None,
+        pooling=None, classes=1000, classifier_activation='softmax'
     )
 
-    # Save model in full
-    utils.saveModelFull(model, 'first_CNN', overwrite=True)
+    # create a new model of type Sequential (this is what we have worked with previously)
+    # and copy the layers from the original vgg16 model (of type Functional API)
+    model = tf.keras.Sequential()
+    for layer in vgg16_model.layers[:-1]:
+        model.add(layer)
+    for layer in model.layers:
+        layer.trainable = False # don't update these layers
+    # add last layer with 7 nodes
+    model.add(Dense(units=num_classes, activation='softmax'))
 
-# Load a full model
-from tensorflow.keras.models import load_model
-model = load_model('models/first_CNN.h5')
+    utils.trainAndSaveModel(model, 
+        'VGG16_pretrained_5_epochs', 
+        train_batches, len(train_batches), 
+        valid_batches, len(valid_batches), 
+        epochs=5, 
+        overwrite=True)
+if False:
+    utils.loadMakePredictionsAndPlotCM('models/VGG16_pretrained_5_epochs.h5', 
+            x=test_batches, 
+            steps=len(test_batches),
+            y_true=test_batches.classes,
+            classLabels=classes,
+            showCM=True
+            )
 
-# Make predictions
-predictions = model.predict(x=test_batches, steps=len(test_batches), verbose=1)
+# -------- MOBILENET MODEL ----------
+# see paper!
 
-# Plot a confusion matrix
-cm = confusion_matrix(y_true=test_batches.classes, y_pred=np.argmax(predictions, axis=-1))
-test_batches.class_indices
-cm_plot_labels = classes
-utils.plotConfusionMatrix(cm=cm, classes=cm_plot_labels, title='Confusion Matrix', show=False)
+train_path = 'data/skin_lesion_images/train'
+valid_path = 'data/skin_lesion_images/valid'
+test_path = 'data/skin_lesion_images/test'
+
+batch_size = 10
+target_size = (600, 450) # resize pixel size of images to this. (600,450) is the normal size
+# (600,450) seems to give better test acc than (224,224)
+input_shape = (target_size[0], target_size[1], 3)
+
+train_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input).flow_from_directory(
+    directory=train_path, target_size=target_size, batch_size=batch_size)
+valid_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input).flow_from_directory(
+    directory=valid_path, target_size=target_size, batch_size=batch_size)
+test_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.mobilenet.preprocess_input).flow_from_directory(
+    directory=test_path, target_size=target_size, batch_size=batch_size, shuffle=False)
+
+if False:
+    # Do some nice assertions
+    assert train_batches.n == num_train * num_classes
+    assert valid_batches.n == num_valid * num_classes
+    assert test_batches.n == num_test * num_classes
+    assert train_batches.num_classes == valid_batches.num_classes == test_batches.num_classes == num_classes
+    
+    mobile = tf.keras.applications.mobilenet.MobileNet()
+    # don't include last 23 layers of original mobileNet (found through experimentation)
+    x = mobile.layers[-6].output
+    output = Dense(units=7, activation='softmax')(x)
+    model = Model(inputs=mobile.input, outputs=output)
+    for layer in model.layers[:-23]:
+        layer.trainable = False
+    model.summary()
+
+    utils.trainAndSaveModel(model, 
+        'mobile_10epochs_3_224x224', 
+        train_batches, len(train_batches), 
+        valid_batches, len(valid_batches), 
+        epochs=10, 
+        overwrite=True)
+
+if True:
+    utils.loadMakePredictionsAndPlotCM('models/mobile_10epochs_3_224x224.h5', 
+            x=test_batches, 
+            steps=len(test_batches),
+            y_true=test_batches.classes,
+            classLabels=classes,
+            showCM=True
+            )
+
+
+
