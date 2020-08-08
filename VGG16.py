@@ -49,11 +49,3 @@ def trainAndSave(name, model, num_classes, input_shape, train_batches, valid_bat
                             overwrite=overwrite)
 
 
-def predict(name, test_batches, classes, showCM=False):
-    utils.loadMakePredictionsAndPlotCM('models/' + name + '.h5',
-                                       x=test_batches,
-                                       steps=len(test_batches),
-                                       y_true=test_batches.classes,
-                                       classLabels=classes,
-                                       showCM=showCM
-                                       )

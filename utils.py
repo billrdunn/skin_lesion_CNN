@@ -45,8 +45,8 @@ def replaceDirTree(dir):
 
 def makeDirectories():
     trees = ['train/akiec', 'train/bcc', 'train/bkl', 'train/df', 'train/mel', 'train/nv', 'train/vasc',
-                'test/akiec', 'test/bcc', 'test/bkl', 'test/df', 'test/mel', 'test/nv', 'test/vasc',
-                'valid/akiec', 'valid/bcc', 'valid/bkl', 'valid/df', 'valid/mel', 'valid/nv', 'valid/vasc']
+             'test/akiec', 'test/bcc', 'test/bkl', 'test/df', 'test/mel', 'test/nv', 'test/vasc',
+             'valid/akiec', 'valid/bcc', 'valid/bkl', 'valid/df', 'valid/mel', 'valid/nv', 'valid/vasc']
     for tree in trees:
         replaceDirTree(tree)
 
@@ -177,12 +177,13 @@ def trainAndSaveModel(
     saveModelFull(model, saveAs, overwrite=True)
 
 
-def loadMakePredictionsAndPlotCM(modelDir, x, steps, y_true, classLabels, verbose=1, showCM=False):
+def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verbose=1, showCM=False):
+    modelDir = 'models/' + model_name + '.h5'
     # Load a full model
     model = load_model(modelDir)
 
     # Make predictions
-    predictions = model.predict(x=x, steps=steps, verbose=1)
+    predictions = model.predict(x=x, steps=steps, verbose=verbose)
 
     # Plot a confusion matrix
     cm = confusion_matrix(y_true=y_true, y_pred=np.argmax(predictions, axis=-1))

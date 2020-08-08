@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import warnings
 import utils
 import VGG16
+import VGG16_fine_tuned
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -29,7 +30,7 @@ classes = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
 num_classes = len(classes)
 paths = ['data/skin_lesion_images/train', 'data/skin_lesion_images/valid', 'data/skin_lesion_images/test']
 batch_size = 10
-target_size = (600, 450)  # resize pixel size of images to this. (600,450) is the normal size
+target_size = (224, 224)  # resize pixel size of images to this. (600,450) is the normal size
 input_shape = (target_size[0], target_size[1], 3)
 
 # Uncomment below to replace images in training, validation and test sets
@@ -42,55 +43,49 @@ input_shape = (target_size[0], target_size[1], 3)
 # print(labels)
 
 # ----- VGG16 MODEL -------
+# # Generate batches
+# train_batches, valid_batches, test_batches = VGG16.createBatches(num_train, num_valid, num_test, num_classes,
+#                                                                  paths, target_size, classes, batch_size)
+# # Define my model
+# my_vgg16 = VGG16.define(input_shape, num_classes)
+#
+# # Train model and save as
+# utils.trainAndSaveModel(my_vgg16,
+#                         'my_vgg16',
+#                         train_batches, len(train_batches),
+#                         valid_batches, len(valid_batches),
+#                         epochs=10,
+#                         overwrite=True)
+#
+# # Load and predict and plot confusion matrix
+# utils.loadMakePredictionsAndPlotCM('my_vgg16', test_batches, classes, showCM=True)
+
+# ------ Fine-tune existing VGG16 model -----
+# NOTE this only works with target_size = (224,224)
+# Generate batches
 train_batches, valid_batches, test_batches = VGG16.createBatches(num_train, num_valid, num_test, num_classes,
                                                                  paths, target_size, classes, batch_size)
-my_vgg16 = VGG16.define(input_shape, num_classes)
-utils.trainAndSaveModel(my_vgg16,
-                        'my_vgg16',
+model_name = 'my_vgg16_finetuned'
+# Import the original model
+# VGG16 won ImageNet competition in 2014
+vgg16 = VGG16_fine_tuned.download()
+
+# Create a new model based on VGG16
+my_vgg16_finetuned = VGG16_fine_tuned.define(vgg16, num_classes)
+
+# Train model and save as
+utils.trainAndSaveModel(my_vgg16_finetuned,
+                        model_name,
                         train_batches, len(train_batches),
                         valid_batches, len(valid_batches),
                         epochs=10,
                         overwrite=True)
-VGG16.predict('my_vgg16', test_batches, classes, showCM=True)
 
-# Fine-tune the VGG16 model
-# VGG16 won ImageNet competition in 2014
-# From the VGG16 paper, the only preprocessing that is done is subtracting
-# the mean RGB pixel value from each pixel
-# unfortunately the images have to be resized to (224,224,3) for pretraining with VGG16
+# Load and predict and plot confusion matrix
+utils.loadMakePredictionsAndPlotCM(model_name, test_batches, classes, showCM=True)
 
 # TODO uncomment everything below here and refactor
-# if False:
-#     # import VGG16 model
-#     vgg16_model = tf.keras.applications.VGG16(
-#         include_top=True, weights='imagenet', input_tensor=None, input_shape=None,
-#         pooling=None, classes=1000, classifier_activation='softmax'
-#     )
-#
-#     # create a new model of type Sequential (this is what we have worked with previously)
-#     # and copy the layers from the original vgg16 model (of type Functional API)
-#     model = tf.keras.Sequential()
-#     for layer in vgg16_model.layers[:-1]:
-#         model.add(layer)
-#     for layer in model.layers:
-#         layer.trainable = False  # don't update these layers
-#     # add last layer with 7 nodes
-#     model.add(Dense(units=num_classes, activation='softmax'))
-#
-#     utils.trainAndSaveModel(model,
-#                             'VGG16_pretrained_5_epochs',
-#                             train_batches, len(train_batches),
-#                             valid_batches, len(valid_batches),
-#                             epochs=5,
-#                             overwrite=True)
-# if False:
-#     utils.loadMakePredictionsAndPlotCM('models/VGG16_pretrained_5_epochs.h5',
-#                                        x=test_batches,
-#                                        steps=len(test_batches),
-#                                        y_true=test_batches.classes,
-#                                        classLabels=classes,
-#                                        showCM=True
-#                                        )
+
 #
 # # -------- MOBILENET MODEL ----------
 # # see paper!
