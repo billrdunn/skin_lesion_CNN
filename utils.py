@@ -14,8 +14,27 @@ import random
 import glob
 import matplotlib.pyplot as plt
 import warnings
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from tensorflow.keras.models import load_model
+
+
+def copyImagesToDirs(num_train, num_valid, num_test):
+    os.chdir('data/skin_lesion_images')
+    makeDirectories()  # THIS WILL REMOVE ALL IMAGES
+    copyImagesToSetsDirs(num_train, num_valid, num_test)
+    os.chdir('../../')
+
+
+def plotImages(images_arr, showPlot=False):
+    fig, axes = plt.subplots(1, 10, figsize=(20, 20))
+    axes = axes.flatten()
+    for img, ax in zip(images_arr, axes):
+        ax.imshow(img)
+        ax.axis('off')
+    plt.tight_layout()
+    if showPlot:
+        plt.show()
 
 
 def replaceDirTree(dir):
@@ -23,31 +42,16 @@ def replaceDirTree(dir):
         shutil.rmtree(dir)
     os.makedirs(dir)
 
+
 def makeDirectories():
-    replaceDirTree('train/akiec')
-    replaceDirTree('train/bcc')
-    replaceDirTree('train/bkl')
-    replaceDirTree('train/df')
-    replaceDirTree('train/mel')
-    replaceDirTree('train/nv')
-    replaceDirTree('train/vasc')
-    replaceDirTree('test/akiec')
-    replaceDirTree('test/bcc')
-    replaceDirTree('test/bkl')
-    replaceDirTree('test/df')
-    replaceDirTree('test/mel')
-    replaceDirTree('test/nv')
-    replaceDirTree('test/vasc')
-    replaceDirTree('valid/akiec')
-    replaceDirTree('valid/bcc')
-    replaceDirTree('valid/bkl')
-    replaceDirTree('valid/df')
-    replaceDirTree('valid/mel')
-    replaceDirTree('valid/nv')
-    replaceDirTree('valid/vasc')
+    trees = ['train/akiec', 'train/bcc', 'train/bkl', 'train/df', 'train/mel', 'train/nv', 'train/vasc',
+                'test/akiec', 'test/bcc', 'test/bkl', 'test/df', 'test/mel', 'test/nv', 'test/vasc',
+                'valid/akiec', 'valid/bcc', 'valid/bkl', 'valid/df', 'valid/mel', 'valid/nv', 'valid/vasc']
+    for tree in trees:
+        replaceDirTree(tree)
+
 
 def copyImagesToSetsDirs(num_train, num_valid, num_test):
-
     for i in random.sample(glob.glob('*akiec*'), num_train):
         shutil.copy(i, 'train/akiec')
     for i in random.sample(glob.glob('*bcc*'), num_train):
@@ -89,25 +93,30 @@ def copyImagesToSetsDirs(num_train, num_valid, num_test):
     for i in random.sample(glob.glob('*nv*'), num_test):
         shutil.copy(i, 'test/nv')
     for i in random.sample(glob.glob('*vasc*'), num_test):
-        shutil.copy(i, 'test/vasc')       
-    
+        shutil.copy(i, 'test/vasc')
+
+
 def saveModelFull(model, name, overwrite=False):
     if overwrite:
         print("Saving model in full...")
-        try: model.save('models/' + name + '.h5')
-        except: print("Did not save!")
+        try:
+            model.save('models/' + name + '.h5')
+        except:
+            print("Did not save!")
     else:
         if os.path.isfile('models/' + name + '.h5') is False:
             print("Saving model in full...")
-            try: model.save('models/' + name + '.h5')
-            except: print("Did not save!")
+            try:
+                model.save('models/' + name + '.h5')
+            except:
+                print("Did not save!")
 
 
 def plotConfusionMatrix(cm, classes,
-                          normalize=False,
-                          title='Confusion matrix',
-                          cmap=plt.cm.get_cmap("Blues"),
-                          show=False):
+                        normalize=False,
+                        title='Confusion matrix',
+                        cmap=plt.cm.get_cmap("Blues"),
+                        show=False):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
@@ -130,8 +139,8 @@ def plotConfusionMatrix(cm, classes,
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, cm[i, j],
-            horizontalalignment="center",
-            color="white" if cm[i, j] > thresh else "black")
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
 
     plt.tight_layout()
     plt.ylabel('True label')
@@ -139,33 +148,34 @@ def plotConfusionMatrix(cm, classes,
     if show:
         plt.show()
 
-def trainAndSaveModel(
-    model, 
-    saveAs,
-    x,
-    steps_per_epoch,
-    validation_data,
-    validation_steps,
-    optimizer=Adam(learning_rate=0.0001), 
-    loss='categorical_crossentropy', 
-    metrics=['accuracy'],
-    epochs=10,
-    verbose=2,
-    overwrite=False):
 
+def trainAndSaveModel(
+        model,
+        saveAs,
+        x,
+        steps_per_epoch,
+        validation_data,
+        validation_steps,
+        optimizer=Adam(learning_rate=0.0001),
+        loss='categorical_crossentropy',
+        metrics=['accuracy'],
+        epochs=10,
+        verbose=2,
+        overwrite=False):
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     # Train model
     model.fit(x=x,
-        steps_per_epoch=steps_per_epoch,
-        validation_data=validation_data,
-        validation_steps=validation_steps,
-        epochs=epochs,
-        verbose=verbose
-    )
+              steps_per_epoch=steps_per_epoch,
+              validation_data=validation_data,
+              validation_steps=validation_steps,
+              epochs=epochs,
+              verbose=verbose
+              )
 
     # Save model in full
     saveModelFull(model, saveAs, overwrite=True)
+
 
 def loadMakePredictionsAndPlotCM(modelDir, x, steps, y_true, classLabels, verbose=1, showCM=False):
     # Load a full model
@@ -179,4 +189,3 @@ def loadMakePredictionsAndPlotCM(modelDir, x, steps, y_true, classLabels, verbos
     x.class_indices
     cm_plot_labels = classLabels
     plotConfusionMatrix(cm=cm, classes=cm_plot_labels, title='Confusion Matrix', show=showCM)
-
