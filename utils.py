@@ -185,8 +185,19 @@ def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verb
     # Make predictions
     predictions = model.predict(x=x, steps=steps, verbose=verbose)
 
+    predictions_list = []
+    for prediction in predictions:
+        predictions_list.append(np.argmax(prediction))
+    predictions_list = np.array(predictions_list)
+
+    temp = sum(predictions_list == y_true)
+    test_acc = temp / len(y_true)
+
+
     # Plot a confusion matrix
     cm = confusion_matrix(y_true=y_true, y_pred=np.argmax(predictions, axis=-1))
     x.class_indices
     cm_plot_labels = classLabels
     plotConfusionMatrix(cm=cm, classes=cm_plot_labels, title='Confusion Matrix', show=showCM)
+
+    return test_acc
