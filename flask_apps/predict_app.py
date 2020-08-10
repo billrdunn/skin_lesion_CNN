@@ -33,7 +33,7 @@ print(" * Loading Keras model...")
 get_model()
 
 
-@app.route("/predict", methods=["POST"])
+@app.route("/predict_with_visuals", methods=["POST"])
 def predict():
     message = request.get_json(force=True)
     encoded = message['image']
@@ -41,7 +41,7 @@ def predict():
     image = Image.open(io.BytesIO(decoded))
     processed_image = preprocess_image(image, target_size=(224, 224))
 
-    prediction = model.predict(processed_image).tolist() # pass to model for prediction and conver to python list
+    prediction = model.predict(processed_image).tolist() # pass to model for prediction and convert to python list
 
     response = {  # python dictionary
         'prediction': { # dictionary within dictionary
