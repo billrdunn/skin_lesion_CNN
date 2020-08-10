@@ -21,9 +21,24 @@ import utils
 import VGG16
 import VGG16_fine_tuned
 import mobileNet
-
+# ----- FORCING DETERMINISTIC (REPRODUCIBLE) MODELS --------
+os.environ[
+    'PYTHONHASHSEED'] = 0  # needed for reproducibility of hash bashed algorithms
+# (see https://keras.io/getting_started/faq/#how-can-i-obtain-reproducible-results-using-keras-during-development)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+# note that using GPUs is non-deterministic as many operations are run in parallel and the order is not always the same
+# to overcome this we can force the code to run on a CPU using:
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+# Set a random seed for numpy (choice of int is arbitrary)
+np.random.seed(53)
+# Set a random seed for Python
+rn.seed(32)
+# Set a random seed for TensorFlow
+tf.random.set_seed(66)
+
+# Set up some global variables
 num_train = 110
 num_valid = 15
 num_test = 20
