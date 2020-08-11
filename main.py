@@ -64,10 +64,12 @@ input_shape = (target_size[0], target_size[1], 3)
 train_batches, valid_batches, test_batches = mobileNet.createBatches(num_train, num_valid, num_test, num_classes,
                                                                      paths, target_size, classes, batch_size)
 test_accs = []
-for param in range(1, 86, 5):
-    model_name = '224x224_layers=(1,86,5)_lr=1-e04' + str(param)
-    utils.train_a_model(model_name, num_classes, 'softmax', train_batches, valid_batches, test_batches, param, 10,
-                        Adam(learning_rate=1e-4),
+lrs = np.linspace(1e-4, 1e-6, 20)
+print(lrs)
+for lr in lrs:
+    model_name = 'relu_224x224_layers=10_lr=' + str(lr)
+    utils.train_a_model(model_name, num_classes, 'relu', train_batches, valid_batches, test_batches, 10, 10,
+                        Adam(learning_rate=lr),
                         'categorical_crossentropy', ['accuracy'])
 
     test_accs.append(utils.loadMakePredictionsAndPlotCM(model_name,
@@ -78,18 +80,16 @@ for param in range(1, 86, 5):
                                                         showCM=False
                                                         ))
     print(test_accs)
-np.save('224x224_layers=(1,86,5)_lr=1-e04.npy', test_accs)
+np.save('generated_data/relu_224x224_layers=10_lr=(1e-4,1e-6,20).npy', test_accs)
 
-# layers_retrained = [1, 11, 21, 31, 41, 51, 61, 71, 81]
-# test_accs_224x224 = np.load('test_accs_224x224.npy')
-# test_accs_600x450 = np.load('test_accs_600x450.npy')
-# plt.plot(layers_retrained, test_accs_224x224, '-')
-# plt.plot(layers_retrained, test_accs_600x450, '-')
-# plt.legend(['224x224', '600x450'])
+# layers_retrained = [i for i in range(60, 71)]
+# test_accs = np.load('generated_data/224x224_layers=(60,71)_lr=1-e04.npy')
+# plt.plot(layers_retrained, test_accs, '-')
+# #plt.legend(['224x224', '600x450'])
 # plt.xlabel('Number of layers of MobileNet retrained')
 # plt.ylabel('Test accuracy (%)')
 # plt.title(
-#     'Effect of input dimensions on test accuracy for different numbers of layers retrained in the MobileNet model')
+#     'Test accuracy for different numbers of layers retrained in the MobileNet model')
 # #plt.show()
-# plt.savefig('graphs/test_acc_vs_layers_retrained_for_two_input_dimensions.png')
+# plt.savefig('graphs/224x224_layers=(60,71)_lr=1-e04.png')
 # plt.close()
