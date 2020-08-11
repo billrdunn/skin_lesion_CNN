@@ -14,6 +14,7 @@ import random
 import glob
 import matplotlib.pyplot as plt
 import warnings
+from keras.models import Model
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from tensorflow.keras.models import load_model
@@ -96,20 +97,20 @@ def copyImagesToSetsDirs(num_train, num_valid, num_test):
         shutil.copy(i, 'test/vasc')
 
 
-def saveModelFull(model, name, overwrite=False):
+def saveModelFull(model, name, overwrite):
     if overwrite:
         print("Saving model in full...")
         try:
             model.save('models/' + name + '.h5')
         except:
-            print("Did not save!")
+            print("Did not save! Error 1")
     else:
         if os.path.isfile('models/' + name + '.h5') is False:
             print("Saving model in full...")
             try:
                 model.save('models/' + name + '.h5')
             except:
-                print("Did not save!")
+                print("Did not save! Overwrite = false and file already exists")
 
 
 def plotConfusionMatrix(cm, classes,
@@ -174,7 +175,7 @@ def trainAndSaveModel(
               )
 
     # Save model in full
-    saveModelFull(model, saveAs, overwrite=True)
+    saveModelFull(model, saveAs, overwrite=overwrite)
 
 
 def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verbose=1, showCM=False):
@@ -193,7 +194,6 @@ def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verb
     temp = sum(predictions_list == y_true)
     test_acc = temp / len(y_true)
 
-
     # Plot a confusion matrix
     cm = confusion_matrix(y_true=y_true, y_pred=np.argmax(predictions, axis=-1))
     x.class_indices
@@ -201,3 +201,27 @@ def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verb
     plotConfusionMatrix(cm=cm, classes=cm_plot_labels, title='Confusion Matrix', show=showCM)
 
     return test_acc
+
+
+def train_a_model(save_as, num_classes, activation, train_batches, valid_batches, test_batches, layers_to_retrain, epochs,
+                  optimizer, loss, metrics):
+    print(f"Training a model with {layers_to_retrain} layers retrained...")
+    # Create the CNN
+    mobile = tf.keras.applications.mobilenet.MobileNet()
+    # don't include last layers of original mobileNet (found through experimentation)
+    x = mobile.layers[-6].output
+    output = Dense(units=num_classes, activation=activation)(x)
+    model = Model(inputs=mobile.input, outputs=output)
+    for layer in model.layers[:-layers_to_retrain]:
+        layer.trainable = False
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+    model.fit(x=train_batches,
+              steps_per_epoch=len(train_batches),
+              validation_data=valid_batches,
+              validation_steps=len(valid_batches),
+              epochs=epochs,
+              verbose=2
+              )
+    model.save('models/' + save_as + '.h5')
+
+

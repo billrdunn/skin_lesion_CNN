@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 def get_model():
     global model
-    model = load_model('mobile_10epochs_3_224x224.h5')
+    model = load_model('mobilenet_224x224_layers=60.h5')
     print(" * Model loaded!")
 
 
