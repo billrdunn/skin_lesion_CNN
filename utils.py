@@ -20,14 +20,34 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 from tensorflow.keras.models import load_model
 
 
-def copyImagesToDirs(num_train, num_valid, num_test):
-    os.chdir('data/skin_lesion_images')
+def copyImagesToDirs(num_train, num_valid, num_test, child_dir='data/skin_lesion_images'):
+    """
+    Copies images randomly from the root directory to folders corresponding to training, validation, and test sets.
+    WARNING: will replace all images currently in these directories.
+
+    Args:
+        num_train: number of training images to put in training directory
+        num_valid: number of validation images to put in validation directory
+        num_test: number of test images to put in test directory
+
+    Returns: None
+    """
+    os.chdir(child_dir)
     makeDirectories()  # THIS WILL REMOVE ALL IMAGES
     copyImagesToSetsDirs(num_train, num_valid, num_test)
     os.chdir('../../')
 
 
 def plotImages(images_arr, showPlot=False):
+    """
+     Plots one image array batch for visualising training procedure.
+
+     Args:
+         images_arr: batch of images
+         showPlot: if True, display plot
+
+     Returns: None
+     """
     fig, axes = plt.subplots(1, 10, figsize=(20, 20))
     axes = axes.flatten()
     for img, ax in zip(images_arr, axes):
@@ -53,48 +73,14 @@ def makeDirectories():
 
 
 def copyImagesToSetsDirs(num_train, num_valid, num_test):
-    for i in random.sample(glob.glob('*akiec*'), num_train):
-        shutil.copy(i, 'train/akiec')
-    for i in random.sample(glob.glob('*bcc*'), num_train):
-        shutil.copy(i, 'train/bcc')
-    for i in random.sample(glob.glob('*bkl*'), num_train):
-        shutil.copy(i, 'train/bkl')
-    for i in random.sample(glob.glob('*df*'), num_train):
-        shutil.copy(i, 'train/df')
-    for i in random.sample(glob.glob('*mel*'), num_train):
-        shutil.copy(i, 'train/mel')
-    for i in random.sample(glob.glob('*nv*'), num_train):
-        shutil.copy(i, 'train/nv')
-    for i in random.sample(glob.glob('*vasc*'), num_train):
-        shutil.copy(i, 'train/vasc')
-    for i in random.sample(glob.glob('*akiec*'), num_valid):
-        shutil.copy(i, 'valid/akiec')
-    for i in random.sample(glob.glob('*bcc*'), num_valid):
-        shutil.copy(i, 'valid/bcc')
-    for i in random.sample(glob.glob('*bkl*'), num_valid):
-        shutil.copy(i, 'valid/bkl')
-    for i in random.sample(glob.glob('*df*'), num_valid):
-        shutil.copy(i, 'valid/df')
-    for i in random.sample(glob.glob('*mel*'), num_valid):
-        shutil.copy(i, 'valid/mel')
-    for i in random.sample(glob.glob('*nv*'), num_valid):
-        shutil.copy(i, 'valid/nv')
-    for i in random.sample(glob.glob('*vasc*'), num_valid):
-        shutil.copy(i, 'valid/vasc')
-    for i in random.sample(glob.glob('*akiec*'), num_test):
-        shutil.copy(i, 'test/akiec')
-    for i in random.sample(glob.glob('*bcc*'), num_test):
-        shutil.copy(i, 'test/bcc')
-    for i in random.sample(glob.glob('*bkl*'), num_test):
-        shutil.copy(i, 'test/bkl')
-    for i in random.sample(glob.glob('*df*'), num_test):
-        shutil.copy(i, 'test/df')
-    for i in random.sample(glob.glob('*mel*'), num_test):
-        shutil.copy(i, 'test/mel')
-    for i in random.sample(glob.glob('*nv*'), num_test):
-        shutil.copy(i, 'test/nv')
-    for i in random.sample(glob.glob('*vasc*'), num_test):
-        shutil.copy(i, 'test/vasc')
+    classes = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
+    for c in classes:
+        for i in random.sample(glob.glob('*' + c + '*'), num_train):
+            shutil.copy(i, 'train/' + c)
+        for i in random.sample(glob.glob(('*' + c + '*')), num_valid):
+            shutil.copy(i, 'valid/' + c)
+        for i in random.sample(glob.glob('*' + c + '*'), num_test):
+            shutil.copy(i, 'test/' + c)
 
 
 def saveModelFull(model, name, overwrite):
@@ -119,9 +105,19 @@ def plotConfusionMatrix(cm, classes,
                         cmap=plt.cm.get_cmap("Blues"),
                         show=False):
     """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    """
+     Plots the confusion matrix for the test set classification on one model.
+
+     Args:
+         cm: confusion matrix
+         classes: list of class labels
+         normalize: if True, normalize matrix
+         title: title of plot
+         cmap: colour map
+         show: if True, display matrix
+
+     Returns: None
+     """
+
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
     plt.colorbar()
@@ -150,35 +146,21 @@ def plotConfusionMatrix(cm, classes,
         plt.show()
 
 
-def trainAndSaveModel(
-        model,
-        saveAs,
-        x,
-        steps_per_epoch,
-        validation_data,
-        validation_steps,
-        optimizer=Adam(learning_rate=0.0001),
-        loss='categorical_crossentropy',
-        metrics=['accuracy'],
-        epochs=10,
-        verbose=2,
-        overwrite=False):
-    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
-
-    # Train model
-    model.fit(x=x,
-              steps_per_epoch=steps_per_epoch,
-              validation_data=validation_data,
-              validation_steps=validation_steps,
-              epochs=epochs,
-              verbose=verbose
-              )
-
-    # Save model in full
-    saveModelFull(model, saveAs, overwrite=overwrite)
-
-
 def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verbose=1, showCM=False):
+    """
+     Loads a saved model, makes predictions on it, plots a confusion matrix, and returns the test accuracy.
+
+     Args:
+         model_name: name of model in directory with extension '.h5'
+         x: test batches
+         steps: required for model.predict, equal to len(x) in most applications
+         y_true: labels (ground truth) for test set
+         classLabels: list of class labels
+         verbose: level of information in output
+         showCM: if True, display confusion matrix
+
+     Returns: test accuracy for x evaluated on model_name
+     """
     modelDir = 'models/' + model_name + '.h5'
     # Load a full model
     model = load_model(modelDir)
@@ -203,8 +185,28 @@ def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verb
     return test_acc
 
 
-def train_a_model(save_as, num_classes, activation, train_batches, valid_batches, test_batches, layers_to_retrain, epochs,
+def train_a_model(save_as, num_classes, activation, train_batches, valid_batches, layers_to_retrain,
+                  epochs,
                   optimizer, loss, metrics):
+    """
+     Retrains a number of layers of an existing model and saves it in full with the '.h5' extension.
+
+     Args:
+         save_as: name to save model as in directory
+         num_classes: number of possible classifications
+         activation: type of activation in output layer, eg. 'softmax', 'relu'
+         train_batches: training batches used to train model
+         valid_batches: validation batches used to monitor validation accuracy during training
+         layers_to_retrain: number of layers of the existing model to retrain
+         epochs: number of training epochs to use
+         optimizer: type of optimizer to use in training - usual is Adam
+         loss: type of loss to use - usual is 'categorical_crossentropy'
+         metrics: list of metrics on which to evaluate, eg. ['accuracy]
+
+
+     Returns: None
+     """
+
     print(f"Training a model with {layers_to_retrain} layers retrained...")
     # Create the CNN
     mobile = tf.keras.applications.mobilenet.MobileNet()
@@ -223,5 +225,3 @@ def train_a_model(save_as, num_classes, activation, train_batches, valid_batches
               verbose=2
               )
     model.save('models/' + save_as + '.h5')
-
-
