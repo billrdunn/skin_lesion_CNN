@@ -58,39 +58,39 @@ batch_size = 10
 
 
 # -------- MOBILENET MODEL ----------
-# target_size = (224, 224)  # resize pixel size of images to this. (600,450) is the normal size
-# input_shape = (target_size[0], target_size[1], 3)
-#
-# train_batches, valid_batches, test_batches = mobileNet.createBatches(num_train, num_valid, num_test, num_classes,
-#                                                                      paths, target_size, classes, batch_size)
-# test_accs = []
-# lrs = np.linspace(1e-4, 1e-6, 20)
-# print(lrs)
-# for lr in lrs:
-#     model_name = 'relu_224x224_layers=10_lr=' + str(lr)
-#     utils.train_a_model(model_name, num_classes, 'relu', train_batches, valid_batches, 10, 10,
-#                         Adam(learning_rate=lr),
-#                         'categorical_crossentropy', ['accuracy'])
-#
-#     test_accs.append(utils.loadMakePredictionsAndPlotCM(model_name,
-#                                                         x=test_batches,
-#                                                         steps=len(test_batches),
-#                                                         y_true=test_batches.classes,
-#                                                         classLabels=classes,
-#                                                         showCM=False
-#                                                         ))
-#     print(test_accs)
-# np.save('generated_data/relu_224x224_layers=10_lr=(1e-4,1e-6,20).npy', test_accs)
+target_size = (224, 224)  # resize pixel size of images to this. (600,450) is the normal size
+input_shape = (target_size[0], target_size[1], 3)
+
+train_batches, valid_batches, test_batches = mobileNet.createBatches(num_train, num_valid, num_test, num_classes,
+                                                                     paths, target_size, classes, batch_size)
+test_accs = []
+lrs = np.linspace(1e-4, 1e-6, 20)
+print(lrs)
+for lr in lrs:
+    model_name = 'relu_224x224_layers=10_lr=' + str(lr)
+    utils.train_a_model(model_name, num_classes, 'relu', train_batches, valid_batches, 10, 10,
+                        Adam(learning_rate=lr),
+                        'categorical_crossentropy', ['accuracy'])
+
+    test_accs.append(utils.loadMakePredictionsAndPlotCM(model_name,
+                                                        x=test_batches,
+                                                        steps=len(test_batches),
+                                                        y_true=test_batches.classes,
+                                                        classLabels=classes,
+                                                        showCM=False
+                                                        ))
+    print(test_accs)
+np.save('generated_data/relu_224x224_layers=10_lr=(1e-4,1e-6,20).npy', test_accs)
 
 lrs = np.linspace(1e-4, 1e-6, 20)
 layers_retrained = [i for i in lrs]
 test_accs = np.load('generated_data/relu_224x224_layers=10_lr=(1e-4,1e-6,20).npy')
 plt.plot(layers_retrained, test_accs, '-')
-#plt.legend(['224x224', '600x450'])
+# plt.legend(['224x224', '600x450'])
 plt.xlabel('Learning rate')
 plt.ylabel('Test accuracy (%)')
 plt.title(
     'Test accuracy for ReLU activation at varying learning rate')
-#plt.show()
+# plt.show()
 plt.savefig('graphs/relu_224x224_layers=10_lr=(1e-4,1e-6,20).png')
 plt.close()
