@@ -64,11 +64,11 @@ input_shape = (target_size[0], target_size[1], 3)
 train_batches, valid_batches, test_batches = mobileNet.createBatches(num_train, num_valid, num_test, num_classes,
                                                                      paths, target_size, classes, batch_size)
 test_accs = []
-lrs = np.linspace(1e-4, 1e-6, 20)
+lrs = np.linspace(1e-4, 1e-6, 2)
 print(lrs)
 for lr in lrs:
     model_name = 'relu_224x224_layers=10_lr=' + str(lr)
-    utils.train_a_model(model_name, num_classes, 'relu', train_batches, valid_batches, 10, 10,
+    utils.train_a_model(model_name, num_classes, 'relu', train_batches, valid_batches, 10, 1,
                         Adam(learning_rate=lr),
                         'categorical_crossentropy', ['accuracy'])
 
