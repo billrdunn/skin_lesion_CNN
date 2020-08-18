@@ -161,7 +161,7 @@ def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verb
 
      Returns: test accuracy for x evaluated on model_name
      """
-    modelDir = 'models/' + model_name + '.h5'
+    modelDir = '../models/' + model_name + '.h5'
     # Load a full model
     model = load_model(modelDir)
 
@@ -224,4 +224,4 @@ def train_a_model(save_as, num_classes, activation, train_batches, valid_batches
               epochs=epochs,
               verbose=2
               )
-    model.save('models/' + save_as + '.h5')
+    model.save('../models/' + save_as + '.h5')
