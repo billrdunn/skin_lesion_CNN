@@ -6,10 +6,12 @@ import random as rn
 import matplotlib.pyplot as plt
 import warnings
 import sys
+import time
+start_time = time.time()
 
 from tensorflow.python.keras.preprocessing.image_dataset import image_dataset_from_directory
 
-# sys.path.insert(0, '/home/cc19563/skin_lesion_CNN')
+sys.path.insert(0, '/home/cc19563/skin_lesion_CNN')
 # print(sys.path)
 import utils
 import mobileNet
@@ -33,12 +35,12 @@ num_valid = 23
 num_test = 22
 classes = ['akiec', 'bcc', 'bkl', 'df', 'mel', 'nv', 'vasc']
 num_classes = len(classes)
-train_dir = '../data/skin_lesion_images/train'
-valid_dir = '../data/skin_lesion_images/valid'
-test_dir = '../data/skin_lesion_images/test'
+train_dir = '/home/cc19563/skin_lesion_CNN/data/skin_lesion_images/train'
+valid_dir = '/home/cc19563/skin_lesion_CNN/data/skin_lesion_images/valid'
+test_dir = '/home/cc19563/skin_lesion_CNN/data/skin_lesion_images/test'
 
 BATCH_SIZE = 10
-IMG_SIZE = (450, 600)
+IMG_SIZE = (224, 224)
 
 train_dataset = image_dataset_from_directory(train_dir,
                                              shuffle=True,
@@ -121,7 +123,7 @@ prediction_layer = tf.keras.layers.Dense(units=num_classes, activation='softmax'
 prediction_batch = prediction_layer(feature_batch_average)
 print(prediction_batch.shape)
 
-inputs = tf.keras.Input(shape=(450, 600, 3))
+inputs = tf.keras.Input(shape=(224,224, 3))
 x = data_augmentation(inputs)
 x = preprocess_input(x)
 x = base_model(x, training=False)
@@ -140,7 +142,7 @@ model.compile(optimizer=tf.keras.optimizers.Adam(lr=base_learning_rate),
 
 len(model.trainable_variables)
 
-initial_epochs = 3
+initial_epochs = 2
 
 loss0, accuracy0 = model.evaluate(validation_dataset)
 
@@ -182,7 +184,7 @@ base_model.trainable = True
 print("Number of layers in the base model: ", len(base_model.layers))
 
 # Fine-tune from this layer onwards
-fine_tune_at = 100
+fine_tune_at = 120
 
 # Freeze all the layers before the `fine_tune_at` layer
 for layer in base_model.layers[:fine_tune_at]:
@@ -194,7 +196,7 @@ model.compile(loss=tf.keras.losses.categorical_crossentropy,
 
 model.summary()
 
-fine_tune_epochs = 3
+fine_tune_epochs = 10
 total_epochs = initial_epochs + fine_tune_epochs
 
 history_fine = model.fit(train_dataset,
@@ -212,7 +214,7 @@ plt.figure(figsize=(8, 8))
 plt.subplot(2, 1, 1)
 plt.plot(acc, label='Training Accuracy')
 plt.plot(val_acc, label='Validation Accuracy')
-plt.ylim([0.8, 1])
+plt.ylim([0.1, 0.7])
 plt.plot([initial_epochs - 1, initial_epochs - 1],
          plt.ylim(), label='Start Fine Tuning')
 plt.legend(loc='lower right')
@@ -228,6 +230,12 @@ plt.legend(loc='upper right')
 plt.title('Training and Validation Loss')
 plt.xlabel('epoch')
 plt.show()
+
+save_name = 'mobilenet_initial=2_final=10_blr=0.0001'
+plt.savefig('graphs/' + save_name + '.png')
+
+print("--- %s seconds ---" % (time.time() - start_time))
+
 
 # # -------- MOBILENET MODEL ----------
 # target_size = (224, 224)  # resize pixel size of images to this. (600,450) is the original size
@@ -253,7 +261,7 @@ plt.show()
 #                                                         showCM=False
 #                                                         ))
 #     print(test_accs)
-# np.save('../generated_data/' + save_name + '.npy', test_accs)
+# np.save('generated_data/' + save_name + '.npy', test_accs)
 #
 # # layers_retrained = [i for i in lrs]
 # test_accs = np.load('../generated_data/' + save_name + '.npy')

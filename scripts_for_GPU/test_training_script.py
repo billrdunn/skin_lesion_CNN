@@ -35,6 +35,8 @@ paths = ['/home/cc19563/skin_lesion_CNN/data/skin_lesion_images/train', '/home/c
                                                                         '/skin_lesion_images/valid',
          '/home/cc19563/skin_lesion_CNN/data/skin_lesion_images/test']
 batch_size = 10
+import time
+start_time = time.time()
 
 # -------- MOBILENET MODEL ----------
 target_size = (224, 224)  # resize pixel size of images to this. (600,450) is the original size
@@ -71,5 +73,7 @@ plt.ylabel('Test accuracy (%)')
 plt.title(
     'Test model graph')
 # plt.show()
-plt.savefig('../graphs/' + save_name + '.png')
+plt.savefig('graphs/' + save_name + '.png')
 plt.close()
+
+print("--- %s seconds ---" % (time.time() - start_time))
