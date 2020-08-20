@@ -56,6 +56,9 @@ batch_size = 10
 # # Print matrix of labels
 # print(labels)
 
+import time
+
+start_time = time.time()
 
 # -------- MOBILENET MODEL ----------
 target_size = (224, 224)  # resize pixel size of images to this. (600,450) is the normal size
@@ -65,10 +68,11 @@ train_batches, valid_batches, test_batches = mobileNet.createBatches(num_train, 
                                                                      paths, target_size, classes, batch_size)
 test_accs = []
 lrs = np.linspace(1e-4, 1e-6, 2)
+save_name = 'test_lr=(1e-4, 1e-6, 5)'
 print(lrs)
 for lr in lrs:
-    model_name = 'relu_224x224_layers=10_lr=' + str(lr)
-    utils.train_a_model(model_name, num_classes, 'relu', train_batches, valid_batches, 10, 1,
+    model_name = save_name + '_' + str(lr)
+    utils.train_a_model(model_name, num_classes, 'relu', train_batches, valid_batches, 10, 3,
                         Adam(learning_rate=lr),
                         'categorical_crossentropy', ['accuracy'])
 
@@ -80,17 +84,18 @@ for lr in lrs:
                                                         showCM=False
                                                         ))
     print(test_accs)
-np.save('generated_data/relu_224x224_layers=10_lr=(1e-4,1e-6,20).npy', test_accs)
+np.save('generated_data/' + save_name + '.npy', test_accs)
 
-lrs = np.linspace(1e-4, 1e-6, 20)
-layers_retrained = [i for i in lrs]
-test_accs = np.load('generated_data/relu_224x224_layers=10_lr=(1e-4,1e-6,20).npy')
-plt.plot(layers_retrained, test_accs, '-')
+# layers_retrained = [i for i in lrs]
+test_accs = np.load('generated_data/' + save_name + '.npy')
+plt.plot(lrs, test_accs, '-')
 # plt.legend(['224x224', '600x450'])
 plt.xlabel('Learning rate')
 plt.ylabel('Test accuracy (%)')
 plt.title(
-    'Test accuracy for ReLU activation at varying learning rate')
+    'Test graph')
 # plt.show()
-plt.savefig('graphs/relu_224x224_layers=10_lr=(1e-4,1e-6,20).png')
+plt.savefig('graphs/' + save_name + '.png')
 plt.close()
+
+print("--- %s seconds ---" % (time.time() - start_time))

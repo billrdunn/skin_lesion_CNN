@@ -1,13 +1,24 @@
 #!/bin/bash
 # request resources:
-#PBS -l nodes=1:ppn=1
+#PBS -j oe
 #PBS -l walltime=02:00:00
+#PBS -l select=3:ngpus=2:mem=24gb
 
-module add lang/python/anaconda/3.7-2020.02-tensorflow-2.1.0
+module add lang/python/anaconda/3.8-2020.07
+module load lang/python/anaconda/3.8-2020.07
 
-module load lang/python/anaconda/3.7-2020.02-tensorflow-2.1.0
+module add load lang/cuda
+module load lang/cuda
+
+python
+import tensorflow
 
 # on compute node, change directory to 'submission directory':
 cd $PBS_O_WORKDIR
+
+SECONDS=0
 # run program
 python ./scripts_for_GPU/test_training_script.py
+
+duration=$SECONDS
+echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."

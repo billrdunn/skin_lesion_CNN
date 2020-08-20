@@ -14,7 +14,7 @@ import random
 import glob
 import matplotlib.pyplot as plt
 import warnings
-from keras.models import Model
+#from keras.models import Model
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from tensorflow.keras.models import load_model
@@ -161,7 +161,7 @@ def loadMakePredictionsAndPlotCM(model_name, x, steps, y_true, classLabels, verb
 
      Returns: test accuracy for x evaluated on model_name
      """
-    modelDir = '../models/' + model_name + '.h5'
+    modelDir = 'models/' + model_name + '.h5'
     # Load a full model
     model = load_model(modelDir)
 
@@ -213,7 +213,7 @@ def train_a_model(save_as, num_classes, activation, train_batches, valid_batches
     # don't include last layers of original mobileNet (found through experimentation)
     x = mobile.layers[-6].output
     output = Dense(units=num_classes, activation=activation)(x)
-    model = Model(inputs=mobile.input, outputs=output)
+    model = tf.keras.Model(inputs=mobile.input, outputs=output)
     for layer in model.layers[:-layers_to_retrain]:
         layer.trainable = False
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
@@ -224,4 +224,4 @@ def train_a_model(save_as, num_classes, activation, train_batches, valid_batches
               epochs=epochs,
               verbose=2
               )
-    model.save('../models/' + save_as + '.h5')
+    model.save('models/' + save_as + '.h5')
