@@ -1,4 +1,6 @@
 import numpy as np
+import sklearn
+import tensorflow_datasets as tfds
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
@@ -14,7 +16,8 @@ import random
 import glob
 import matplotlib.pyplot as plt
 import warnings
-#from keras.models import Model
+
+# from keras.models import Model
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from tensorflow.keras.models import load_model
@@ -225,3 +228,19 @@ def train_a_model(save_as, num_classes, activation, train_batches, valid_batches
               verbose=2
               )
     model.save('models/' + save_as + '.h5')
+
+
+def plot_confusion_matrix(model, test_dataset, normalize):
+    y_test = np.concatenate([y for x, y in test_dataset], axis=0)
+    y_test = np.where(y_test == 1)[1]
+
+    predictions = model.predict(x=test_dataset)
+    predictions_list = []
+    for prediction in predictions:
+        predictions_list.append(np.argmax(prediction))
+    predictions_list = np.array(predictions_list)
+    cm = sklearn.metrics.confusion_matrix(y_test, predictions_list)
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    return cm
