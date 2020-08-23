@@ -51,9 +51,11 @@ CLASSIFIER_KERNEL_SIZE = 3
 
 # Fine-tuned network training parameters
 EPOCHS = 10  # number of epochs when fine-tuning
-# LEARNING_RATE = 0.00001
-LEARNING_RATE_RANGE = np.geomspace(1e-7, 1e-4, 15)
+LEARNING_RATE = 1e-5
+#LEARNING_RATE_RANGE = np.geomspace(1e-7, 1e-4, 15)
 FINE_TUNE_AT = 100  # number of layers to fine-tune from
+FINE_TUNE_AT_RANGE = np.linspace(10,150,15)
+print(FINE_TUNE_AT_RANGE)
 
 ADD_TO_DIR = ''
 ON_LOCAL = False  # Change this when copying script to bluepebble
@@ -64,7 +66,7 @@ DATA_DIR = ADD_TO_DIR + 'data/images_sorted/'
 MODELS_DIR = ADD_TO_DIR + 'models/'
 GRAPHS_DIR = ADD_TO_DIR + 'graphs/'
 GENERATED_DATA_DIR = ADD_TO_DIR + 'generated_data/'
-INVESTIGATION_NAME = 'coarse_learning_rate/'
+INVESTIGATION_NAME = 'coarse_number_layers/'
 
 # Set seeds for numpy and TensorFlow for deterministic results
 np.random.seed(SEED)
@@ -84,8 +86,9 @@ test_dataset = val_dataset.take(int(NUM_BATCHES * TEST_FRACTION))
 val_dataset = val_dataset.skip(int(NUM_BATCHES * TEST_FRACTION))
 
 
-for LEARNING_RATE in LEARNING_RATE_RANGE:
-    MODEL_NAME = 'LR=' + str(LEARNING_RATE)  # Name to save model
+for FINE_TUNE_AT in FINE_TUNE_AT_RANGE:
+    FINE_TUNE_AT = int(FINE_TUNE_AT)
+    MODEL_NAME = 'FTA=' + str(FINE_TUNE_AT)  # Name to save model
     # Use Mobilenet v2 as the base model
     base_model = tf.keras.applications.MobileNetV2(input_shape=IMG_SHAPE,
                                                    include_top=False,
@@ -140,7 +143,7 @@ for LEARNING_RATE in LEARNING_RATE_RANGE:
 
     # Get the test loss and test accuracy
     test_loss, test_accuracy = model.evaluate(test_dataset)
-    print('Test accuracy for LR = ' + str(LEARNING_RATE), test_accuracy)
+    print('Test accuracy for FTA = ' + str(LEARNING_RATE), test_accuracy)
     np.save(GENERATED_DATA_DIR + INVESTIGATION_NAME + 'testAcc_' + MODEL_NAME, test_accuracy)
     np.save(GENERATED_DATA_DIR + INVESTIGATION_NAME + 'testLoss_' + MODEL_NAME, test_loss)
 

@@ -18,7 +18,7 @@ cd $PBS_O_WORKDIR
 
 SECONDS=0
 # run program
-python ./scripts_for_GPU/coarse_learning_rate.py
+python ./scripts_for_GPU/coarse_dropout.py
 
 duration=$SECONDS
 echo "$(($duration / 60)) minutes and $(($duration % 60)) seconds elapsed."

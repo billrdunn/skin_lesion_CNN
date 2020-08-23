@@ -3,47 +3,40 @@ from os.path import exists
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-layers = np.linspace(1, 250, num=250)
-test_accs = np.zeros(250)
-losses = np.zeros(250)
+base_dir = '../generated_data/coarse_number_layers/testAcc_FTA='
+save_dir = '../generated_data/coarse_number_layers/ALL_testAcc_FTA=linspace(10,150,15).npy'
+layers = np.linspace(10,150,15)
+test_accs = np.zeros(15)
+losses = np.zeros(15)
+index = 0
 for layer in layers:
-    layer_int = int(layer)
-    print(layer_int)
-    if exists('generated_data/MN_numLayers/testAcc_MN_initial=2_final=10_blr=0.0001_layers=' + str(layer_int) + '.npy'):
-        test_accs[layer_int - 1] = np.load(
-            'generated_data/MN_numLayers/testAcc_MN_initial=2_final=10_blr=0.0001_layers=' + str(layer_int) + '.npy')
+    directory = base_dir + str(int(layer)) + '.npy'
+    print(directory)
+    if exists(directory):
+        test_accs[index] = np.load(directory)
     else:
-        print("not found testAcc file")
+        print("not found")
+    index += 1
 
-    if exists('generated_data/MN_numLayers/loss_MN_initial=2_final=10_blr=0.0001_layers=' + str(layer_int) + '.npy'):
-        losses[layer_int - 1] = np.load(
-            'generated_data/MN_numLayers/loss_MN_initial=2_final=10_blr=0.0001_layers=' + str(layer_int) + '.npy')
-    else:
-        print("not found loss file")
+test_accs_save = [layers, test_accs]
+np.save(save_dir, test_accs_save)
+
+test_accs = np.load(save_dir)
 
 # for i in range(1, 84):
 #     losses[i] = losses[i] - losses[i - 1]
 
-print(test_accs)
-test_accs_save = [layers, test_accs]
-np.save('generated_data/MN_numLayers/ALL_testAcc_MN_initial=2_final=10_blr=0.0001_layers=(1,149,num=149)',
-        test_accs_save)
-
-test_accs = np.load(
-    'generated_data/MN_numLayers/ALL_testAcc_MN_initial=2_final=10_blr=0.0001_layers=(1,149,num=149).npy')
-print(test_accs.shape)
-print(test_accs)
 
 plt.figure(figsize=(12, 7))
+#plt.plot(test_accs[0, :], test_accs[1, :], '-')
 plt.plot(test_accs[0, :], test_accs[1, :], '-')
-# plt.plot(layers, losses, '-')
-# plt.legend(['224x224', '600x450'])
-plt.xlabel('fine_tune_to')
+plt.xlabel('Layer fine-tuned from')
 plt.ylabel('Test accuracy (%)')
 plt.title(
-    'Transfer learning MobileNet model: how number of layers fine-tuned affects test accuracy')
-plt.savefig('graphs/MN_numLayers.png')
+    'Test graph')
+plt.title(
+    'Transfer learning MobileNet model: how layer fine-tuned from affects test accuracy')
+plt.savefig('../graphs/coarse_number_layers/linspace(10,150,15).png')
 
 # losses = np.zeros(84)
 # for i in range(1, 84):

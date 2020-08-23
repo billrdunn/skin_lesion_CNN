@@ -44,7 +44,7 @@ HORIZONTAL_FLIP = True
 
 # Base network training parameters
 INITIAL_LEARNING_RATE = 0.0001
-INITIAL_EPOCHS = 3  # number of epochs to train the model with no fine-tuning
+INITIAL_EPOCHS = 2  # number of epochs to train the model with no fine-tuning
 CLASSIFIER_DROPOUT = 0.2
 CLASSIFIER_FILTERS = 32
 CLASSIFIER_KERNEL_SIZE = 3
@@ -52,8 +52,9 @@ CLASSIFIER_KERNEL_SIZE = 3
 # Fine-tuned network training parameters
 EPOCHS = 10  # number of epochs when fine-tuning
 # LEARNING_RATE = 0.00001
-LEARNING_RATE_RANGE = np.geomspace(1e-7, 1e-4, 15)
-FINE_TUNE_AT = 100  # number of layers to fine-tune from
+LEARNING_RATE_RANGE = np.linspace(1e-6, 1e-5, 10)
+print(LEARNING_RATE_RANGE)
+FINE_TUNE_AT = 60  # number of layers to fine-tune from
 
 ADD_TO_DIR = ''
 ON_LOCAL = False  # Change this when copying script to bluepebble
@@ -64,7 +65,7 @@ DATA_DIR = ADD_TO_DIR + 'data/images_sorted/'
 MODELS_DIR = ADD_TO_DIR + 'models/'
 GRAPHS_DIR = ADD_TO_DIR + 'graphs/'
 GENERATED_DATA_DIR = ADD_TO_DIR + 'generated_data/'
-INVESTIGATION_NAME = 'coarse_learning_rate/'
+INVESTIGATION_NAME = 'fine_learning_rate/'
 
 # Set seeds for numpy and TensorFlow for deterministic results
 np.random.seed(SEED)
